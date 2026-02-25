@@ -1,0 +1,59 @@
+﻿@{
+    ViewData["Title"] = "Examination Dashboard";
+}
+
+<h2>Examination Control Panel</h2>
+<hr />
+
+<div class="row">
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white p-3">
+            <h5>Departments</h5>
+            <h3>@ViewBag.TotalDepartments</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white p-3">
+            <h5>Programs</h5>
+            <h3>@ViewBag.TotalPrograms</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white p-3">
+            <h5>Batches</h5>
+            <h3>@ViewBag.TotalBatches</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white p-3">
+            <h5>Courses</h5>
+            <h3>@ViewBag.TotalCourses</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-secondary text-white p-3">
+            <h5>Semesters</h5>
+            <h3>@ViewBag.TotalSemesters</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-dark text-white p-3">
+            <h5>Enrollments</h5>
+            <h3>@ViewBag.TotalEnrollments</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-danger text-white p-3">
+            <h5>Marks Entered</h5>
+            <h3>@ViewBag.TotalMarks</h3>
+        </div>
+    </div>
+
+</div>
