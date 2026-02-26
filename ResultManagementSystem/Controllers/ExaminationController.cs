@@ -14,16 +14,23 @@ public class ExaminationController : Controller
         _context = context;
     }
 
-    // Dashboard
+
     public async Task<IActionResult> Dashboard()
     {
         ViewBag.TotalDepartments = await _context.Departments.CountAsync();
         ViewBag.TotalPrograms = await _context.AcademicPrograms.CountAsync();
         ViewBag.TotalBatches = await _context.Batches.CountAsync();
+        ViewBag.TotalStudents = await _context.Users
+            .CountAsync(u => u.BatchId != null);
+
         ViewBag.TotalCourses = await _context.Courses.CountAsync();
-        ViewBag.TotalSemesters = await _context.Semesters.CountAsync();
-        ViewBag.TotalEnrollments = await _context.Enrollments.CountAsync();
         ViewBag.TotalMarks = await _context.Marks.CountAsync();
+
+        // Average GPA (All Records)
+        var allGpas = await _context.Marks.Select(m => m.GPA).ToListAsync();
+        ViewBag.AverageGpa = allGpas.Any()
+            ? Math.Round(allGpas.Average(), 2)
+            : 0;
 
         return View();
     }

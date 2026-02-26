@@ -5,10 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using ResultManagementSystem.Data;
 using ResultManagementSystem.Models;
 using ResultManagementSystem.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+
 
 
 namespace ResultManagementSystem.Controllers
@@ -19,17 +16,34 @@ namespace ResultManagementSystem.Controllers
         private readonly ApplicationDbContext _context;
         private readonly GpaService _gpaService;
 
-        public MarksController(ApplicationDbContext context, GpaService gpaService)
+        private readonly TranscriptPdfGenerator _pdfGenerator;
+
+        public MarksController(
+            ApplicationDbContext context,
+            GpaService gpaService,
+            TranscriptPdfGenerator pdfGenerator)
         {
             _context = context;
             _gpaService = gpaService;
+            _pdfGenerator = pdfGenerator;
         }
 
+
         // GET: Marks
+        //public async Task<IActionResult> Index()
+        //{
+        //    var applicationDbContext = _context.Marks.Include(m => m.Enrollment);
+        //    return View(await applicationDbContext.ToListAsync());
+        //}
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Marks.Include(m => m.Enrollment);
-            return View(await applicationDbContext.ToListAsync());
+            var marks = _context.Marks
+                .Include(m => m.Enrollment)
+                .ThenInclude(e => e.CourseOffering)
+                .ThenInclude(co => co.Semester)
+                .Include(m => m.Enrollment.Student);
+
+            return View(await marks.ToListAsync());
         }
 
         // GET: Marks/Details/5
@@ -57,6 +71,63 @@ namespace ResultManagementSystem.Controllers
         //    ViewData["EnrollmentId"] = new SelectList(_context.Enrollments, "Id", "Id");
         //    return View();
         //}
+
+        //public async Task<IActionResult> SemesterResult(string studentId, int semesterId)
+        //{
+        //    var semesterGpa = await _gpaService
+        //        .CalculateSemesterGpaAsync(studentId, semesterId);
+
+        //    var marks = await _context.Marks
+        //        .Include(m => m.Enrollment)
+        //        .ThenInclude(e => e.CourseOffering)
+        //        .ThenInclude(co => co.Course)
+        //        .Where(m => m.Enrollment.StudentId == studentId &&
+        //                    m.Enrollment.CourseOffering.SemesterId == semesterId)
+        //        .ToListAsync();
+
+        //    ViewBag.SemesterGpa = semesterGpa;
+
+        //    return View(marks);
+        //}
+
+        public async Task<IActionResult> SemesterResult(string studentId, int semesterId)
+        {
+            var student = await _context.Users
+                .Include(u => u.Batch)
+                .ThenInclude(b => b.AcademicProgram)
+                .ThenInclude(p => p.Department)
+                .FirstOrDefaultAsync(u => u.Id == studentId);
+
+            var semester = await _context.Semesters
+                .FirstOrDefaultAsync(s => s.Id == semesterId);
+
+            var marks = await _context.Marks
+                .Include(m => m.Enrollment)
+                .ThenInclude(e => e.CourseOffering)
+                .ThenInclude(co => co.Course)
+                .Where(m => m.Enrollment.StudentId == studentId &&
+                            m.Enrollment.CourseOffering.SemesterId == semesterId)
+                .ToListAsync();
+
+            var semesterGpa = await _gpaService
+                .CalculateSemesterGpaAsync(studentId, semesterId);
+
+            var cgpa = await _gpaService.CalculateCgpaAsync(studentId);
+            ViewBag.Cgpa = cgpa;
+
+            ViewBag.Student = student;
+            ViewBag.Semester = semester;
+            ViewBag.SemesterGpa = semesterGpa;
+
+            ViewBag.TotalCreditHours = marks
+                .Sum(m => m.Enrollment.CourseOffering.Course.CreditHours);
+
+            ViewBag.Status = marks.Any(m => m.Grade == "F")
+                ? "FAIL"
+                : "PASS";
+
+            return View(marks);
+        }
 
         public IActionResult Create()
         {
@@ -224,6 +295,53 @@ namespace ResultManagementSystem.Controllers
         private bool MarkExists(int id)
         {
             return _context.Marks.Any(e => e.Id == id);
+        }
+
+        public IActionResult GenerateResult()
+        {
+            ViewBag.Students = _context.Users
+                .Where(u => u.BatchId != null)
+                .ToList();
+
+            ViewBag.Semesters = _context.Semesters.ToList();
+
+            return View();
+        }
+        public async Task<IActionResult> DownloadTranscript(string studentId, int semesterId)
+        {
+            var student = await _context.Users
+                .Include(u => u.Batch)
+                .ThenInclude(b => b.AcademicProgram)
+                .ThenInclude(p => p.Department)
+                .FirstOrDefaultAsync(u => u.Id == studentId);
+
+            var semester = await _context.Semesters
+                .FirstOrDefaultAsync(s => s.Id == semesterId);
+
+            var marks = await _context.Marks
+                .Include(m => m.Enrollment)
+                .ThenInclude(e => e.CourseOffering)
+                .ThenInclude(co => co.Course)
+                .Where(m => m.Enrollment.StudentId == studentId &&
+                            m.Enrollment.CourseOffering.SemesterId == semesterId)
+                .ToListAsync();
+
+            var semesterGpa = await _gpaService.CalculateSemesterGpaAsync(studentId, semesterId);
+            var cgpa = await _gpaService.CalculateCgpaAsync(studentId);
+
+            var totalCreditHours = marks.Sum(m => m.Enrollment.CourseOffering.Course.CreditHours);
+            var status = marks.Any(m => m.Grade == "F") ? "FAIL" : "PASS";
+
+            var pdfBytes = _pdfGenerator.Generate(
+                student,
+                semester,
+                marks,
+                semesterGpa,
+                cgpa,
+                totalCreditHours,
+                status);
+
+            return File(pdfBytes, "application/pdf", "Transcript.pdf");
         }
     }
 }

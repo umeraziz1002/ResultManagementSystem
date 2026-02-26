@@ -30,13 +30,15 @@ builder.Services
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-
+builder.Services.AddScoped<TranscriptPdfGenerator>();
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<GpaService>();
 
 
 
 var app = builder.Build();
+
+
 
 
 using (var scope = app.Services.CreateScope())

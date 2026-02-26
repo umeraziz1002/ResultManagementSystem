@@ -46,13 +46,21 @@ namespace ResultManagementSystem.Controllers
             return View(enrollment);
         }
 
-        // GET: Enrollments/Create
         public IActionResult Create()
         {
-            ViewData["CourseOfferingId"] = new SelectList(_context.CourseOfferings, "Id", "Id");
-            ViewData["StudentId"] = new SelectList(_context.Users, "Id", "Id");
+            ViewBag.Students = _context.Users
+                .Include(u => u.Batch)
+                .Where(u => u.BatchId != null)
+                .ToList();
+
+            ViewBag.CourseOfferings = _context.CourseOfferings
+                .Include(c => c.Course)
+                .Include(c => c.Semester)
+                .ToList();
+
             return View();
         }
+
 
         // POST: Enrollments/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
@@ -69,8 +77,11 @@ namespace ResultManagementSystem.Controllers
             }
             ViewData["CourseOfferingId"] = new SelectList(_context.CourseOfferings, "Id", "Id", enrollment.CourseOfferingId);
             ViewData["StudentId"] = new SelectList(_context.Users, "Id", "Id", enrollment.StudentId);
+
+
             return View(enrollment);
         }
+
 
         // GET: Enrollments/Edit/5
         public async Task<IActionResult> Edit(int? id)

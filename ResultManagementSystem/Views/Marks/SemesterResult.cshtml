@@ -1,0 +1,124 @@
+﻿@model IEnumerable<ResultManagementSystem.Models.Mark>
+
+@{
+    var student = ViewBag.Student;
+    var semester = ViewBag.Semester;
+}
+
+<div class="container mt-4">
+
+    @* <div class="text-center">
+        <h2>Result Management System</h2>
+        <h4>Semester Transcript</h4>
+        <hr />
+    </div> *@
+
+    <div class="text-center">
+        <img src="~/images/GPGC-LOGO.png"
+             alt="University Logo"
+             style="height:80px;" />
+
+        <h2 class="mt-2">Result Management System</h2>
+        <h4>Semester Transcript</h4>
+        <hr />
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <p><strong>Student Name:</strong> @student.FullName</p>
+            <p><strong>Email:</strong> @student.Email</p>
+            <p><strong>Program:</strong> @student.Batch?.AcademicProgram?.Name</p>
+            <p><strong>Department:</strong> @student.Batch?.AcademicProgram?.Department?.Name</p>
+        </div>
+
+        <div class="col-md-6">
+            <p><strong>Batch:</strong> @student.Batch?.StartYear</p>
+            <p><strong>Semester:</strong> @semester?.Name</p>
+        </div>
+    </div>
+
+    <hr />
+
+    <table class="table table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Course Code</th>
+                <th>Course Title</th>
+                <th>Credit Hours</th>
+                <th>Total Marks</th>
+                <th>Grade</th>
+                <th>Grade Point</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Enrollment.CourseOffering.Course.Code</td>
+                    <td>@item.Enrollment.CourseOffering.Course.Title</td>
+                    <td>@item.Enrollment.CourseOffering.Course.CreditHours</td>
+                    <td>@item.Total</td>
+                    <td>@item.Grade</td>
+                    <td>@item.GPA</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h5>Total Credit Hours: @ViewBag.TotalCreditHours</h5>
+        </div>
+        <div class="col-md-6 text-end">
+            <h5>Semester GPA: @ViewBag.SemesterGpa</h5>
+            <h5>
+                Status:
+                <span class="@(ViewBag.Status == "PASS" ? "text-success" : "text-danger")">
+                    @ViewBag.Status
+                </span>
+            </h5>
+            <h5>Cumulative GPA (CGPA): @ViewBag.Cgpa</h5>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-6 text-center">
+            <hr style="width:60%" />
+            <p>Examination Controller</p>
+        </div>
+
+        <div class="col-md-6 text-center">
+            <hr style="width:60%" />
+            <p>Date: @DateTime.Now.ToShortDateString()</p>
+        </div>
+    </div>
+    <div class="text-center mt-4">
+       
+        <button onclick="window.print()" class="btn btn-primary no-print">
+            Print Transcript
+        </button>
+    </div>
+    <a asp-action="DownloadTranscript"
+       asp-route-studentId="@student.Id"
+       asp-route-semesterId="@semester.Id"
+       class="btn btn-success no-print">
+        Download PDF
+    </a>
+
+</div>
+
+
+<style>
+    @@media print {
+        .no-print {
+            display: none;
+        }
+    }
+
+    @@media print {
+        body   {
+        margin: 20px;
+        }
+    }
+
+</style>

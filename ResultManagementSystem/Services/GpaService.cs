@@ -57,6 +57,33 @@ namespace ResultManagementSystem.Services
                 ? 0
                 : Math.Round(totalQualityPoints / totalCreditHours, 2);
         }
+        public async Task<decimal> CalculateCgpaAsync(string studentId)
+        {
+            var marks = await _context.Marks
+                .Include(m => m.Enrollment)
+                .ThenInclude(e => e.CourseOffering)
+                .ThenInclude(co => co.Course)
+                .Where(m => m.Enrollment.StudentId == studentId)
+                .ToListAsync();
+
+            if (!marks.Any())
+                return 0;
+
+            decimal totalQualityPoints = 0;
+            int totalCreditHours = 0;
+
+            foreach (var mark in marks)
+            {
+                int credit = mark.Enrollment.CourseOffering.Course.CreditHours;
+                totalQualityPoints += mark.GPA * credit;
+                totalCreditHours += credit;
+            }
+
+            return totalCreditHours == 0
+                ? 0
+                : Math.Round(totalQualityPoints / totalCreditHours, 2);
+        }
+
 
 
     }
