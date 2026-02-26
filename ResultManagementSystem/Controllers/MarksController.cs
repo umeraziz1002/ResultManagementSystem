@@ -35,15 +35,43 @@ namespace ResultManagementSystem.Controllers
         //    var applicationDbContext = _context.Marks.Include(m => m.Enrollment);
         //    return View(await applicationDbContext.ToListAsync());
         //}
-        public async Task<IActionResult> Index()
-        {
-            var marks = _context.Marks
-                .Include(m => m.Enrollment)
-                .ThenInclude(e => e.CourseOffering)
-                .ThenInclude(co => co.Semester)
-                .Include(m => m.Enrollment.Student);
+        //public async Task<IActionResult> Index()
+        //{
+        //    var marks = _context.Marks
+        //        .Include(m => m.Enrollment)
+        //        .ThenInclude(e => e.CourseOffering)
+        //        .ThenInclude(co => co.Semester)
+        //        .Include(m => m.Enrollment.Student);
 
-            return View(await marks.ToListAsync());
+        //    return View(await marks.ToListAsync());
+        //}
+
+        public async Task<IActionResult> Index(int page = 1)
+        {
+            int pageSize = 10;
+
+            var query = _context.Marks
+                .Include(m => m.Enrollment)
+                    .ThenInclude(e => e.Student)
+                .Include(m => m.Enrollment)
+                    .ThenInclude(e => e.CourseOffering)
+                        .ThenInclude(co => co.Course)
+                .Include(m => m.Enrollment)
+                    .ThenInclude(e => e.CourseOffering)
+                        .ThenInclude(co => co.Semester);
+
+            var totalRecords = await query.CountAsync();
+
+            var marks = await query
+                .OrderByDescending(m => m.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+            return View(marks);
         }
 
         // GET: Marks/Details/5

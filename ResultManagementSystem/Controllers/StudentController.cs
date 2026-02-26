@@ -18,13 +18,36 @@ public class StudentsController : Controller
     }
 
     // LIST STUDENTS
-    public async Task<IActionResult> Index()
+    //public async Task<IActionResult> Index()
+    //{
+    //    var students = await _context.Users
+    //        .Include(u => u.Batch)
+    //        .ThenInclude(b => b.AcademicProgram)
+    //        .Where(u => u.BatchId != null)
+    //        .ToListAsync();
+
+    //    return View(students);
+    //}
+
+    public async Task<IActionResult> Index(int page = 1)
     {
-        var students = await _context.Users
+        int pageSize = 10;   // Records per page
+
+        var query = _context.Users
             .Include(u => u.Batch)
             .ThenInclude(b => b.AcademicProgram)
-            .Where(u => u.BatchId != null)
+            .Where(u => u.BatchId != null);
+
+        var totalRecords = await query.CountAsync();
+
+        var students = await query
+            .OrderBy(u => u.FullName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+
+        ViewBag.CurrentPage = page;
+        ViewBag.TotalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
 
         return View(students);
     }
